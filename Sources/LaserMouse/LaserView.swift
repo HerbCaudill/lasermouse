@@ -31,15 +31,14 @@ final class LaserView: NSView {
     if let head = state.head { drawDot(at: local(head), in: context) }
   }
 
-  /// Strokes the trail into a grayscale mask, keeping the newest (brightest) opacity wherever segments
+  /// Strokes the trail into a grayscale mask, keeping the newest (brightest) opacity wherever curves
   /// overlap, then fills through the mask. Lighten blending makes overlapping round caps harmless, so
   /// joints neither build up into darker beads nor leave seams.
   private func drawTail(in context: CGContext, local: (CGPoint) -> CGPoint) {
-    let segments = state.trail.segments
+    let curves = state.trail.curves
     let width = state.strokeWidth
-    let box = segments.reduce(CGRect.null) { box, segment in
-      box.union(CGRect(origin: local(segment.from.position), size: .zero))
-        .union(CGRect(origin: local(segment.to.position), size: .zero))
+    let box = curves.reduce(CGRect.null) { box, curve in
+      [curve.from, curve.control, curve.to].reduce(box) { $0.union(CGRect(origin: local($1), size: .zero)) }
     }.insetBy(dx: -width, dy: -width).intersection(bounds).integral
     guard !box.isEmpty else { return }
 
@@ -54,10 +53,10 @@ final class LaserView: NSView {
     mask.setLineCap(.round)
     mask.setLineJoin(.round)
     mask.setLineWidth(width)
-    for (from, to) in segments {
-      mask.setStrokeColor(gray: state.trail.opacity(of: to, at: state.now), alpha: 1)
-      mask.move(to: local(from.position))
-      mask.addLine(to: local(to.position))
+    for curve in curves {
+      mask.setStrokeColor(gray: state.trail.opacity(of: curve.point, at: state.now), alpha: 1)
+      mask.move(to: local(curve.from))
+      mask.addQuadCurve(to: local(curve.to), control: local(curve.control))
       mask.strokePath()
     }
     guard let image = mask.makeImage() else { return }

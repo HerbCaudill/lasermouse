@@ -9,6 +9,22 @@ public struct TrailPoint: Equatable, Sendable {
   public var startsStroke: Bool
 }
 
+/// A quadratic curve along the trail, with the sampled point whose age sets its opacity.
+public struct TrailCurve: Sendable {
+  public var from: CGPoint
+  public var control: CGPoint
+  public var to: CGPoint
+  public var point: TrailPoint
+
+  static func line(from: CGPoint, to: CGPoint, point: TrailPoint) -> TrailCurve {
+    TrailCurve(from: from, control: midpoint(from, to), to: to, point: point)
+  }
+}
+
+private func midpoint(_ a: CGPoint, _ b: CGPoint) -> CGPoint {
+  CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+}
+
 /// The recent path of the laser, where each point stays fully visible for `fadeDelay` and then fades
 /// out over `fadeDuration`.
 public struct Trail: Sendable {
@@ -26,8 +42,9 @@ public struct Trail: Sendable {
 
   public var isEmpty: Bool { points.isEmpty }
 
-  /// Records the pointer at `position` at time `time`.
+  /// Records the pointer at `position` at time `time`, unless it hasn't moved since the last point.
   public mutating func add(_ position: CGPoint, at time: TimeInterval) {
+    if !isStrokeEnded, points.last?.position == position { return }
     points.append(TrailPoint(position: position, time: time, startsStroke: isStrokeEnded))
     isStrokeEnded = false
   }
@@ -37,9 +54,30 @@ public struct Trail: Sendable {
     isStrokeEnded = true
   }
 
-  /// Pairs of consecutive points within the same mark, oldest first.
-  public var segments: [(from: TrailPoint, to: TrailPoint)] {
-    zip(points, points.dropFirst()).filter { !$0.1.startsStroke }.map { (from: $0.0, to: $0.1) }
+  /// The trail as smooth curves, oldest first. Each sampled point is the control point of a curve
+  /// between the midpoints on either side of it, so the line bends through the samples instead of
+  /// cornering at them. Each mark starts and ends at its first and last points.
+  public var curves: [TrailCurve] {
+    strokes.filter { $0.count > 1 }.flatMap { stroke in
+      let points = Array(stroke)
+      let midpoints = zip(points, points.dropFirst()).map { midpoint($0.position, $1.position) }
+      let bends = (1..<points.count - 1).map { index in
+        TrailCurve(from: midpoints[index - 1], control: points[index].position, to: midpoints[index], point: points[index])
+      }
+      return [.line(from: points.first!.position, to: midpoints.first!, point: points.first!)] + bends
+        + [.line(from: midpoints.last!, to: points.last!.position, point: points.last!)]
+    }
+  }
+
+  /// The points split into marks.
+  private var strokes: [ArraySlice<TrailPoint>] {
+    points.indices.reduce(into: []) { strokes, index in
+      if index == 0 || points[index].startsStroke {
+        strokes.append(points[index...index])
+      } else {
+        strokes[strokes.count - 1] = points[strokes[strokes.count - 1].startIndex...index]
+      }
+    }
   }
 
   /// Drops points that have fully faded by `time`.

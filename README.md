@@ -17,9 +17,9 @@ The app is signed ad hoc, so it only runs on the Mac that built it.
 
 ## Use
 
-Hold ⌃⌥⌘, click and drag. Let go and the tail finishes fading. While the keys are down, clicks go to LaserMouse instead of the app underneath. The menu bar icon lets you choose which of Control, Option, Command and the left mouse button turn on the laser, change the fade delay and fade time, the dot size and the color, and turn on "Open at login".
+Hold ⌃⌥⌘ and drag with the left button to draw, or with the right button to draw a rectangle. Let go and the mark fades. While the keys are down, clicks go to LaserMouse instead of the app underneath. The menu bar icon has a grid for choosing which keys and buttons trigger each action, and lets you change the fade delay and fade time, the dot size and the color, and turn on "Open at login".
 
-LaserMouse needs no permissions. It reads the modifier keys, mouse button and pointer position by polling rather than by listening for events.
+LaserMouse needs no permissions. It reads the modifier keys, mouse buttons and pointer position by polling rather than by listening for events.
 
 ## Develop
 

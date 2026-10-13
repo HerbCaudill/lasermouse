@@ -41,9 +41,21 @@ final class Settings {
     set { defaults.set(Double(newValue), forKey: "dotSize") }
   }
 
-  var trigger: Trigger {
-    get { (defaults.object(forKey: "trigger") as? Int).map(Trigger.init) ?? .all }
-    set { defaults.set(newValue.rawValue, forKey: "trigger") }
+  static let defaultTriggers: [Action: Trigger] = [
+    .draw: [.control, .option, .command, .leftClick],
+    .rectangle: [.control, .option, .command, .rightClick],
+  ]
+
+  var triggers: [Action: Trigger] {
+    Dictionary(uniqueKeysWithValues: Action.allCases.map { ($0, trigger(for: $0)) })
+  }
+
+  func trigger(for action: Action) -> Trigger {
+    (defaults.object(forKey: "trigger.\(action.rawValue)") as? Int).map(Trigger.init) ?? Self.defaultTriggers[action]!
+  }
+
+  func setTrigger(_ trigger: Trigger, for action: Action) {
+    defaults.set(trigger.rawValue, forKey: "trigger.\(action.rawValue)")
   }
 
   var color: LaserColor {

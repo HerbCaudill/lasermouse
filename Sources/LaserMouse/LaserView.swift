@@ -5,6 +5,7 @@ import LaserMouseCore
 @MainActor
 final class LaserState {
   var trail = Trail(fadeDuration: 3)
+  var rectangles = Rectangles(fadeDuration: 3)
   var head: CGPoint?
   var now: TimeInterval = 0
   var color = LaserColor.red.nsColor
@@ -25,6 +26,7 @@ final class LaserView: NSView {
   override func draw(_ dirtyRect: NSRect) {
     guard let context = NSGraphicsContext.current?.cgContext, let origin = window?.frame.origin else { return }
     let local = { (point: CGPoint) in CGPoint(x: point.x - origin.x, y: point.y - origin.y) }
+    drawRectangles(in: context, local: local)
     drawTail(in: context, local: local)
     if let head = state.head { drawDot(at: local(head), in: context) }
   }
@@ -46,6 +48,20 @@ final class LaserView: NSView {
       context.strokePath()
     }
     context.endTransparencyLayer()
+  }
+
+  private func drawRectangles(in context: CGContext, local: (CGPoint) -> CGPoint) {
+    context.setLineJoin(.round)
+    context.setLineWidth(state.dotSize * 0.3)
+    for mark in state.rectangles.marks {
+      let opacity = state.rectangles.opacity(of: mark, at: state.now)
+      let origin = local(mark.rect.origin)
+      let rect = CGRect(origin: origin, size: mark.rect.size)
+      context.setFillColor(state.color.withAlphaComponent(0.1 * opacity).cgColor)
+      context.fill(rect)
+      context.setStrokeColor(state.color.withAlphaComponent(0.85 * opacity).cgColor)
+      context.stroke(rect)
+    }
   }
 
   private func drawDot(at center: CGPoint, in context: CGContext) {

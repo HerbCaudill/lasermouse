@@ -22,6 +22,8 @@ public struct Trail: Sendable {
     self.fadeDelay = fadeDelay
   }
 
+  private var fade: Fade { Fade(duration: fadeDuration, delay: fadeDelay) }
+
   public var isEmpty: Bool { points.isEmpty }
 
   /// Records the pointer at `position` at time `time`.
@@ -42,13 +44,12 @@ public struct Trail: Sendable {
 
   /// Drops points that have fully faded by `time`.
   public mutating func prune(at time: TimeInterval) {
-    points.removeAll { time - $0.time >= fadeDelay + fadeDuration }
+    let fade = fade
+    points.removeAll { fade.isOver(age: time - $0.time) }
   }
 
   /// Returns 1 until a point is `fadeDelay` old, then falls linearly to 0 over `fadeDuration`.
   public func opacity(of point: TrailPoint, at time: TimeInterval) -> Double {
-    guard fadeDuration > 0 else { return 0 }
-    let fadeAge = time - point.time - fadeDelay
-    return min(1, max(0, 1 - fadeAge / fadeDuration))
+    fade.opacity(age: time - point.time)
   }
 }

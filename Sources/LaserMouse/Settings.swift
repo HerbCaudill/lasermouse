@@ -22,6 +22,7 @@ enum LaserColor: String, CaseIterable {
 final class Settings {
   static let fadeDelayRange: ClosedRange<Double> = 0...5
   static let fadeRange: ClosedRange<Double> = 0.2...5
+  static let smoothingRange: ClosedRange<Double> = 0...50
   static let strokeWidthRange: ClosedRange<Double> = 4...40
 
   private let defaults = UserDefaults.standard
@@ -34,6 +35,11 @@ final class Settings {
   var fadeDelay: TimeInterval {
     get { defaults.object(forKey: "fadeDelay") as? Double ?? 0 }
     set { defaults.set(newValue, forKey: "fadeDelay") }
+  }
+
+  var smoothing: Double {
+    get { defaults.object(forKey: "smoothing") as? Double ?? 10 }
+    set { defaults.set(newValue, forKey: "smoothing") }
   }
 
   var strokeWidth: CGFloat {

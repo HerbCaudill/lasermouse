@@ -30,6 +30,8 @@ private func midpoint(_ a: CGPoint, _ b: CGPoint) -> CGPoint {
 public struct Trail: Sendable {
   public var fadeDuration: TimeInterval
   public var fadeDelay: TimeInterval
+  /// How far along the stroke, in points, each sample is averaged with its neighbors. 0 is no smoothing.
+  public var smoothing: Double = 0
   public private(set) var points: [TrailPoint] = []
   private var isStrokeEnded = true
 
@@ -59,13 +61,43 @@ public struct Trail: Sendable {
   /// cornering at them. Each mark starts and ends at its first and last points.
   public var curves: [TrailCurve] {
     strokes.filter { $0.count > 1 }.flatMap { stroke in
-      let points = Array(stroke)
+      let points = smoothed(Array(stroke))
       let midpoints = zip(points, points.dropFirst()).map { midpoint($0.position, $1.position) }
       let bends = (1..<points.count - 1).map { index in
         TrailCurve(from: midpoints[index - 1], control: points[index].position, to: midpoints[index], point: points[index])
       }
       return [.line(from: points.first!.position, to: midpoints.first!, point: points.first!)] + bends
         + [.line(from: midpoints.last!, to: points.last!.position, point: points.last!)]
+    }
+  }
+
+  /// Moves each point to a weighted average of its neighbors within `smoothing` along the stroke.
+  /// The window shrinks toward the ends so it stays centered, which keeps the first and last points
+  /// in place: the stroke starts where it was pressed and its tip stays under the pointer.
+  private func smoothed(_ stroke: [TrailPoint]) -> [TrailPoint] {
+    guard smoothing > 0, stroke.count > 2 else { return stroke }
+    let distances = zip(stroke, stroke.dropFirst()).reduce(into: [0.0]) { distances, pair in
+      distances.append(distances.last! + hypot(pair.1.position.x - pair.0.position.x, pair.1.position.y - pair.0.position.y))
+    }
+    let length = distances.last!
+    return stroke.indices.map { index in
+      let radius = min(smoothing, distances[index], length - distances[index])
+      guard radius > 0 else { return stroke[index] }
+      var sum = CGPoint.zero
+      var totalWeight = 0.0
+      var first = index
+      while first > 0, distances[index] - distances[first - 1] < radius { first -= 1 }
+      var last = index
+      while last < stroke.count - 1, distances[last + 1] - distances[index] < radius { last += 1 }
+      for neighbor in first...last {
+        let weight = 1 - abs(distances[neighbor] - distances[index]) / radius
+        sum.x += stroke[neighbor].position.x * weight
+        sum.y += stroke[neighbor].position.y * weight
+        totalWeight += weight
+      }
+      var point = stroke[index]
+      point.position = CGPoint(x: sum.x / totalWeight, y: sum.y / totalWeight)
+      return point
     }
   }
 

@@ -56,6 +56,11 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         title: "Stroke", value: settings.strokeWidth, range: Settings.strokeWidthRange,
         format: { String(format: "%.0f pt", $0) }
       ) { [weak self] in self?.settings.strokeWidth = $0 })
+    menu.addItem(
+      sliderItem(
+        title: "Smoothing", value: settings.smoothing, range: Settings.smoothingRange,
+        format: { String(format: "%.0f pt", $0) }
+      ) { [weak self] in self?.settings.smoothing = $0 })
 
     menu.addItem(.separator())
     menu.addItem(.sectionHeader(title: "Color"))

@@ -48,6 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     state.now = now
     state.trail.fadeDuration = settings.fadeDuration
     state.trail.fadeDelay = settings.fadeDelay
+    state.trail.smoothing = settings.smoothing
     state.rectangles.fade = Fade(duration: settings.fadeDuration, delay: settings.fadeDelay)
     state.color = settings.color.nsColor
     state.strokeWidth = settings.strokeWidth

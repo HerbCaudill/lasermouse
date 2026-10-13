@@ -104,3 +104,42 @@ private func shape(_ curve: TrailCurve) -> [CGPoint] { [curve.from, curve.contro
   trail.add(CGPoint(x: 1, y: 1), at: 0.1)
   #expect(trail.points.count == 2)
 }
+
+/// Adds a zigzag stroke and returns the smoothed positions the curves pass through.
+private func smoothedZigzag(smoothing: Double) -> [CGPoint] {
+  var trail = Trail(fadeDuration: 1)
+  trail.smoothing = smoothing
+  for x in 0...8 {
+    trail.add(CGPoint(x: Double(x) * 4, y: x.isMultiple(of: 2) ? 0 : 4), at: Double(x))
+  }
+  return trail.curves.dropFirst().dropLast().map(\.control)
+}
+
+@Test func noSmoothingFollowsTheSamplesExactly() {
+  #expect(smoothedZigzag(smoothing: 0) == (1...7).map { CGPoint(x: Double($0) * 4, y: $0.isMultiple(of: 2) ? 0 : 4) })
+}
+
+@Test func smoothingFlattensWobbles() {
+  let wobble = { (points: [CGPoint]) in points.map(\.y).max()! - points.map(\.y).min()! }
+  let light = wobble(smoothedZigzag(smoothing: 8))
+  let heavy = wobble(smoothedZigzag(smoothing: 30))
+  #expect(light < 4)
+  #expect(heavy < light)
+}
+
+@Test func smoothingKeepsTheEndsOfAStrokeInPlace() {
+  var trail = Trail(fadeDuration: 1)
+  trail.smoothing = 30
+  for x in 0...8 {
+    trail.add(CGPoint(x: Double(x) * 4, y: x.isMultiple(of: 2) ? 0 : 4), at: Double(x))
+  }
+  #expect(trail.curves.first!.from == CGPoint(x: 0, y: 0))
+  #expect(trail.curves.last!.to == CGPoint(x: 32, y: 0))
+}
+
+@Test func smoothingLeavesAStraightLineStraight() {
+  var trail = Trail(fadeDuration: 1)
+  trail.smoothing = 30
+  for x in 0...8 { trail.add(CGPoint(x: Double(x) * 4, y: 0), at: Double(x)) }
+  #expect(trail.curves.allSatisfy { $0.from.y == 0 && $0.control.y == 0 && $0.to.y == 0 })
+}

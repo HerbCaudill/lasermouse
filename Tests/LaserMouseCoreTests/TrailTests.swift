@@ -32,3 +32,16 @@ import Testing
   trail.fadeDuration = 4
   #expect(trail.opacity(of: trail.points[0], at: 1) == 0.75)
 }
+
+@Test func segmentsDoNotJoinSeparateStrokes() {
+  var trail = Trail(fadeDuration: 1)
+  trail.add(CGPoint(x: 1, y: 1), at: 0)
+  trail.add(CGPoint(x: 2, y: 2), at: 0.1)
+  trail.endStroke()
+  trail.add(CGPoint(x: 3, y: 3), at: 0.2)
+  trail.add(CGPoint(x: 4, y: 4), at: 0.3)
+  #expect(trail.segments.map { [$0.from.position, $0.to.position] } == [
+    [CGPoint(x: 1, y: 1), CGPoint(x: 2, y: 2)],
+    [CGPoint(x: 3, y: 3), CGPoint(x: 4, y: 4)],
+  ])
+}

@@ -49,7 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     state.color = settings.color.nsColor
     state.dotSize = settings.dotSize
     state.head = isHeld ? pointer : nil
-    if isHeld { state.trail.add(pointer, at: now) }
+    if isHeld { state.trail.add(pointer, at: now) } else { state.trail.endStroke() }
     state.trail.prune(at: now)
 
     // Keep the mouse until the button comes up, so the app underneath never sees half a click.

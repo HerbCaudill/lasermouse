@@ -30,19 +30,19 @@ final class LaserView: NSView {
   }
 
   private func drawTail(in context: CGContext, local: (CGPoint) -> CGPoint) {
-    let points = state.trail.points
-    guard points.count > 1 else { return }
+    let segments = state.trail.segments
+    guard !segments.isEmpty else { return }
     // Copy blending inside a transparency layer lets newer segments replace older ones where their
     // round caps overlap, so the joints don't build up into darker beads.
     context.beginTransparencyLayer(auxiliaryInfo: nil)
     context.setBlendMode(.copy)
     context.setLineCap(.round)
-    for index in 1..<points.count {
-      let opacity = state.trail.opacity(of: points[index], at: state.now)
+    for (from, to) in segments {
+      let opacity = state.trail.opacity(of: to, at: state.now)
       context.setStrokeColor(state.color.withAlphaComponent(0.85 * opacity).cgColor)
       context.setLineWidth(state.dotSize * (0.2 + 0.6 * opacity))
-      context.move(to: local(points[index - 1].position))
-      context.addLine(to: local(points[index].position))
+      context.move(to: local(from.position))
+      context.addLine(to: local(to.position))
       context.strokePath()
     }
     context.endTransparencyLayer()

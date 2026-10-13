@@ -22,7 +22,20 @@ final class StatusMenu: NSObject, NSMenuDelegate {
   func menuNeedsUpdate(_ menu: NSMenu) {
     menu.removeAllItems()
 
-    menu.addItem(.sectionHeader(title: "Hold to point"))
+    let isLoginItem = SMAppService.mainApp.status == .enabled
+    menu.addItem(choiceItem("Open at login", isOn: isLoginItem) {
+      do {
+        if isLoginItem {
+          try SMAppService.mainApp.unregister()
+        } else {
+          try SMAppService.mainApp.register()
+        }
+      } catch {
+        NSAlert(error: error).runModal()
+      }
+    })
+
+    menu.addItem(.separator())
     let triggerItem = NSMenuItem()
     triggerItem.view = TriggerGridView(settings: settings)
     menu.addItem(triggerItem)
@@ -55,18 +68,6 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     }
 
     menu.addItem(.separator())
-    let isLoginItem = SMAppService.mainApp.status == .enabled
-    menu.addItem(choiceItem("Open at login", isOn: isLoginItem) {
-      do {
-        if isLoginItem {
-          try SMAppService.mainApp.unregister()
-        } else {
-          try SMAppService.mainApp.register()
-        }
-      } catch {
-        NSAlert(error: error).runModal()
-      }
-    })
     menu.addItem(NSMenuItem(title: "Quit LaserMouse", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
   }
 

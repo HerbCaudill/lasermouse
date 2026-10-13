@@ -31,15 +31,13 @@ final class LaserView: NSView {
     if let head = state.head { drawDot(at: local(head), in: context) }
   }
 
-  /// Strokes the trail into a grayscale mask, keeping the newest (brightest) opacity wherever curves
+  /// Strokes the trail into a grayscale mask, keeping the newest (brightest) opacity wherever lines
   /// overlap, then fills through the mask. Lighten blending makes overlapping round caps harmless, so
   /// joints neither build up into darker beads nor leave seams.
   private func drawTail(in context: CGContext, local: (CGPoint) -> CGPoint) {
-    let curves = state.trail.curves
+    let lines = state.trail.lines
     let width = state.strokeWidth
-    let box = curves.reduce(CGRect.null) { box, curve in
-      [curve.from, curve.control1, curve.control2, curve.to].reduce(box) { $0.union(CGRect(origin: local($1), size: .zero)) }
-    }.insetBy(dx: -width, dy: -width).intersection(bounds).integral
+    let box = lines.joined().reduce(CGRect.null) { $0.union(CGRect(origin: local($1.position), size: .zero)) }.insetBy(dx: -width, dy: -width).intersection(bounds).integral
     guard !box.isEmpty else { return }
 
     let scale = window?.backingScaleFactor ?? 2
@@ -53,10 +51,20 @@ final class LaserView: NSView {
     mask.setLineCap(.round)
     mask.setLineJoin(.round)
     mask.setLineWidth(width)
-    for curve in curves {
-      mask.setStrokeColor(gray: state.trail.opacity(of: curve.point, at: state.now), alpha: 1)
-      mask.move(to: local(curve.from))
-      mask.addCurve(to: local(curve.to), control1: local(curve.control1), control2: local(curve.control2))
+    // Stretches whose opacity rounds to the same mask level are stroked as one path, so a line still
+    // within its fade delay is a single stroke.
+    for line in lines {
+      var level: CGFloat?
+      for (from, to) in zip(line, line.dropFirst()) {
+        let gray = (state.trail.opacity(of: to, at: state.now) * 255).rounded() / 255
+        if gray != level {
+          mask.strokePath()
+          mask.setStrokeColor(gray: gray, alpha: 1)
+          mask.move(to: local(from.position))
+          level = gray
+        }
+        mask.addLine(to: local(to.position))
+      }
       mask.strokePath()
     }
     guard let image = mask.makeImage() else { return }

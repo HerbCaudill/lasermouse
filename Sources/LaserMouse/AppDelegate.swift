@@ -1,9 +1,9 @@
 import AppKit
 import LaserMouseCore
 
-/// Polls the modifier keys and pointer, records the trail, and redraws the overlays.
+/// Polls the modifier keys, mouse button and pointer, records the trail, and redraws the overlays.
 ///
-/// Polling `NSEvent.modifierFlags` and `NSEvent.mouseLocation` needs no Accessibility or Input
+/// Polling `NSEvent.modifierFlags`, `NSEvent.pressedMouseButtons` and `NSEvent.mouseLocation` needs no Accessibility or Input
 /// Monitoring permission, unlike global event monitors.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -37,7 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   private func tick() {
     let now = ProcessInfo.processInfo.systemUptime
-    let isHeld = settings.combo.isHeld(by: NSEvent.modifierFlags)
+    let isHeld = settings.trigger.isHeld(by: NSEvent.modifierFlags, mouseDown: NSEvent.pressedMouseButtons & 1 != 0)
     let pointer = NSEvent.mouseLocation
 
     state.now = now

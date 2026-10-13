@@ -20,13 +20,13 @@ enum LaserColor: String, CaseIterable {
 /// User preferences, persisted in UserDefaults.
 @MainActor
 final class Settings {
-  static let fadeRange: ClosedRange<Double> = 0.2...3
+  static let fadeRange: ClosedRange<Double> = 0.2...5
   static let dotSizeRange: ClosedRange<Double> = 8...40
 
   private let defaults = UserDefaults.standard
 
   var fadeDuration: TimeInterval {
-    get { defaults.object(forKey: "fadeDuration") as? Double ?? 1 }
+    get { defaults.object(forKey: "fadeDuration") as? Double ?? 3 }
     set { defaults.set(newValue, forKey: "fadeDuration") }
   }
 
@@ -35,9 +35,9 @@ final class Settings {
     set { defaults.set(Double(newValue), forKey: "dotSize") }
   }
 
-  var combo: ModifierCombo {
-    get { defaults.string(forKey: "combo").flatMap(ModifierCombo.init) ?? .controlOptionCommand }
-    set { defaults.set(newValue.rawValue, forKey: "combo") }
+  var trigger: Trigger {
+    get { (defaults.object(forKey: "trigger") as? Int).map(Trigger.init) ?? .all }
+    set { defaults.set(newValue.rawValue, forKey: "trigger") }
   }
 
   var color: LaserColor {

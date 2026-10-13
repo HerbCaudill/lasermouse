@@ -4,7 +4,7 @@ import LaserMouseCore
 /// What every overlay draws on a given frame, in global screen coordinates.
 @MainActor
 final class LaserState {
-  var trail = Trail(fadeDuration: 1)
+  var trail = Trail(fadeDuration: 3)
   var head: CGPoint?
   var now: TimeInterval = 0
   var color = LaserColor.red.nsColor

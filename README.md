@@ -17,9 +17,9 @@ The app is signed ad hoc, so it only runs on the Mac that built it.
 
 ## Use
 
-Hold the modifier combo and move the pointer. Release it and the tail finishes fading. The menu bar icon lets you change the combo, the fade time, the dot size and the color, and turn on "Open at login".
+Hold ⌃⌥⌘, click and drag. Let go and the tail finishes fading. The menu bar icon lets you choose which of Control, Option, Command and the mouse click turn on the laser, change the fade time, the dot size and the color, and turn on "Open at login".
 
-LaserMouse needs no permissions. It reads the modifier keys and pointer position by polling rather than by listening for events.
+LaserMouse needs no permissions. It reads the modifier keys, mouse button and pointer position by polling rather than by listening for events.
 
 ## Develop
 

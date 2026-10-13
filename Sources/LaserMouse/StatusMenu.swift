@@ -23,9 +23,12 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     menu.removeAllItems()
 
     menu.addItem(.sectionHeader(title: "Hold to point"))
-    for combo in ModifierCombo.allCases {
-      menu.addItem(choiceItem(combo.symbols, isOn: settings.combo == combo) { [weak self] in
-        self?.settings.combo = combo
+    let triggerParts: [(String, Trigger)] = [
+      ("⌃ Control", .control), ("⌥ Option", .option), ("⌘ Command", .command), ("Mouse click", .mouseClick),
+    ]
+    for (title, part) in triggerParts {
+      menu.addItem(choiceItem(title, isOn: settings.trigger.contains(part)) { [weak self] in
+        self?.settings.trigger.formSymmetricDifference(part)
       })
     }
 

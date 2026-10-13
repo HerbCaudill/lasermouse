@@ -31,23 +31,42 @@ final class LaserView: NSView {
     if let head = state.head { drawDot(at: local(head), in: context) }
   }
 
+  /// Strokes the trail into a grayscale mask, keeping the newest (brightest) opacity wherever segments
+  /// overlap, then fills through the mask. Lighten blending makes overlapping round caps harmless, so
+  /// joints neither build up into darker beads nor leave seams.
   private func drawTail(in context: CGContext, local: (CGPoint) -> CGPoint) {
     let segments = state.trail.segments
-    guard !segments.isEmpty else { return }
-    // Copy blending inside a transparency layer lets newer segments replace older ones where their
-    // round caps overlap, so the joints don't build up into darker beads.
-    context.beginTransparencyLayer(auxiliaryInfo: nil)
-    context.setBlendMode(.copy)
-    context.setLineCap(.round)
+    let width = state.strokeWidth
+    let box = segments.reduce(CGRect.null) { box, segment in
+      box.union(CGRect(origin: local(segment.from.position), size: .zero))
+        .union(CGRect(origin: local(segment.to.position), size: .zero))
+    }.insetBy(dx: -width, dy: -width).intersection(bounds).integral
+    guard !box.isEmpty else { return }
+
+    let scale = window?.backingScaleFactor ?? 2
+    guard let mask = CGContext(
+      data: nil, width: Int(box.width * scale), height: Int(box.height * scale), bitsPerComponent: 8,
+      bytesPerRow: 0, space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)
+    else { return }
+    mask.scaleBy(x: scale, y: scale)
+    mask.translateBy(x: -box.minX, y: -box.minY)
+    mask.setBlendMode(.lighten)
+    mask.setLineCap(.round)
+    mask.setLineJoin(.round)
+    mask.setLineWidth(width)
     for (from, to) in segments {
-      let opacity = state.trail.opacity(of: to, at: state.now)
-      context.setStrokeColor(state.color.withAlphaComponent(0.85 * opacity).cgColor)
-      context.setLineWidth(state.strokeWidth)
-      context.move(to: local(from.position))
-      context.addLine(to: local(to.position))
-      context.strokePath()
+      mask.setStrokeColor(gray: state.trail.opacity(of: to, at: state.now), alpha: 1)
+      mask.move(to: local(from.position))
+      mask.addLine(to: local(to.position))
+      mask.strokePath()
     }
-    context.endTransparencyLayer()
+    guard let image = mask.makeImage() else { return }
+
+    context.saveGState()
+    context.clip(to: box, mask: image)
+    context.setFillColor(state.color.withAlphaComponent(0.85).cgColor)
+    context.fill(box)
+    context.restoreGState()
   }
 
   private func drawRectangles(in context: CGContext, local: (CGPoint) -> CGPoint) {

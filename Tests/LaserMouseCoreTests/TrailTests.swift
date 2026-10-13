@@ -33,29 +33,41 @@ import Testing
   #expect(trail.opacity(of: trail.points[0], at: 1) == 0.75)
 }
 
-/// A curve's start, control and end points, for comparing in tests.
-private func shape(_ curve: TrailCurve) -> [CGPoint] { [curve.from, curve.control, curve.to] }
+/// Where a curve is at `t` between 0 and 1.
+private func position(on curve: TrailCurve, at t: Double) -> CGPoint {
+  let u = 1 - t
+  let weights = [u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t]
+  let points = [curve.from, curve.control1, curve.control2, curve.to]
+  return zip(weights, points).reduce(CGPoint.zero) { CGPoint(x: $0.x + $1.0 * $1.1.x, y: $0.y + $1.0 * $1.1.y) }
+}
+
+@Test func curvesPassThroughEverySample() {
+  var trail = Trail(fadeDuration: 1)
+  let samples = [CGPoint(x: 0, y: 0), CGPoint(x: 4, y: 0), CGPoint(x: 4, y: 4), CGPoint(x: 9, y: 6)]
+  for (index, sample) in samples.enumerated() { trail.add(sample, at: Double(index)) }
+  #expect(trail.curves.map(\.from) == Array(samples.dropLast()))
+  #expect(trail.curves.map(\.to) == Array(samples.dropFirst()))
+}
 
 @Test func twoPointsMakeAStraightLine() {
   var trail = Trail(fadeDuration: 1)
   trail.add(CGPoint(x: 0, y: 0), at: 0)
-  trail.add(CGPoint(x: 4, y: 0), at: 0.1)
-  #expect(trail.curves.map(shape) == [
-    [CGPoint(x: 0, y: 0), CGPoint(x: 1, y: 0), CGPoint(x: 2, y: 0)],
-    [CGPoint(x: 2, y: 0), CGPoint(x: 3, y: 0), CGPoint(x: 4, y: 0)],
-  ])
+  trail.add(CGPoint(x: 6, y: 0), at: 0.1)
+  #expect(trail.curves.count == 1)
+  #expect(trail.curves.allSatisfy { $0.control1.y == 0 && $0.control2.y == 0 })
 }
 
-@Test func cornersAreRoundedThroughTheMidpoints() {
+@Test func sparseSamplesOnACircleStayOnTheCircle() {
   var trail = Trail(fadeDuration: 1)
-  trail.add(CGPoint(x: 0, y: 0), at: 0)
-  trail.add(CGPoint(x: 4, y: 0), at: 0.1)
-  trail.add(CGPoint(x: 4, y: 4), at: 0.2)
-  #expect(trail.curves.map(shape) == [
-    [CGPoint(x: 0, y: 0), CGPoint(x: 1, y: 0), CGPoint(x: 2, y: 0)],
-    [CGPoint(x: 2, y: 0), CGPoint(x: 4, y: 0), CGPoint(x: 4, y: 2)],
-    [CGPoint(x: 4, y: 2), CGPoint(x: 4, y: 3), CGPoint(x: 4, y: 4)],
-  ])
+  let radius = 500.0
+  for index in 0...12 {
+    let angle = Double(index) / 12 * 2 * .pi
+    trail.add(CGPoint(x: radius * cos(angle), y: radius * sin(angle)), at: Double(index))
+  }
+  for curve in trail.curves.dropFirst().dropLast() {
+    let middle = position(on: curve, at: 0.5)
+    #expect(abs(hypot(middle.x, middle.y) - radius) < radius * 0.01)
+  }
 }
 
 @Test func curvesDoNotJoinSeparateStrokes() {
@@ -65,11 +77,9 @@ private func shape(_ curve: TrailCurve) -> [CGPoint] { [curve.from, curve.contro
   trail.endStroke()
   trail.add(CGPoint(x: 10, y: 0), at: 0.2)
   trail.add(CGPoint(x: 12, y: 0), at: 0.3)
-  #expect(trail.curves.map(shape) == [
-    [CGPoint(x: 0, y: 0), CGPoint(x: 0.5, y: 0), CGPoint(x: 1, y: 0)],
-    [CGPoint(x: 1, y: 0), CGPoint(x: 1.5, y: 0), CGPoint(x: 2, y: 0)],
-    [CGPoint(x: 10, y: 0), CGPoint(x: 10.5, y: 0), CGPoint(x: 11, y: 0)],
-    [CGPoint(x: 11, y: 0), CGPoint(x: 11.5, y: 0), CGPoint(x: 12, y: 0)],
+  #expect(trail.curves.map { [$0.from, $0.to] } == [
+    [CGPoint(x: 0, y: 0), CGPoint(x: 2, y: 0)],
+    [CGPoint(x: 10, y: 0), CGPoint(x: 12, y: 0)],
   ])
 }
 
@@ -112,7 +122,7 @@ private func smoothedZigzag(smoothing: Double) -> [CGPoint] {
   for x in 0...8 {
     trail.add(CGPoint(x: Double(x) * 4, y: x.isMultiple(of: 2) ? 0 : 4), at: Double(x))
   }
-  return trail.curves.dropFirst().dropLast().map(\.control)
+  return trail.curves.dropFirst().map(\.from)
 }
 
 @Test func noSmoothingFollowsTheSamplesExactly() {
@@ -141,5 +151,5 @@ private func smoothedZigzag(smoothing: Double) -> [CGPoint] {
   var trail = Trail(fadeDuration: 1)
   trail.smoothing = 30
   for x in 0...8 { trail.add(CGPoint(x: Double(x) * 4, y: 0), at: Double(x)) }
-  #expect(trail.curves.allSatisfy { $0.from.y == 0 && $0.control.y == 0 && $0.to.y == 0 })
+  #expect(trail.curves.allSatisfy { $0.from.y == 0 && $0.control1.y == 0 && $0.control2.y == 0 && $0.to.y == 0 })
 }

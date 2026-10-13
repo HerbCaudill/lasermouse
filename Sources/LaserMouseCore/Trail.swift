@@ -9,20 +9,41 @@ public struct TrailPoint: Equatable, Sendable {
   public var startsStroke: Bool
 }
 
-/// A quadratic curve along the trail, with the sampled point whose age sets its opacity.
+/// A cubic curve between two neighboring samples, with the newer sample, whose age sets its opacity.
 public struct TrailCurve: Sendable {
   public var from: CGPoint
-  public var control: CGPoint
+  public var control1: CGPoint
+  public var control2: CGPoint
   public var to: CGPoint
   public var point: TrailPoint
 
-  static func line(from: CGPoint, to: CGPoint, point: TrailPoint) -> TrailCurve {
-    TrailCurve(from: from, control: midpoint(from, to), to: to, point: point)
+  /// The curve from `p1` to `p2` of a centripetal Catmull-Rom spline through `p0`...`p3`, as a
+  /// Bézier. Centripetal spacing keeps the curve from overshooting or looping when samples are
+  /// unevenly spaced, as they are when the pointer speeds up or slows down.
+  init(_ p0: CGPoint, _ p1: CGPoint, _ p2: CGPoint, _ p3: CGPoint, point: TrailPoint) {
+    let a = distance(p0, p1).squareRoot()
+    let b = distance(p1, p2).squareRoot()
+    let c = distance(p2, p3).squareRoot()
+    from = p1
+    to = p2
+    control1 = a == 0 ? p1 : combine([(a * a, p2), (-b * b, p0), (2 * a * a + 3 * a * b + b * b, p1)], over: 3 * a * (a + b))
+    control2 = c == 0 ? p2 : combine([(c * c, p1), (-b * b, p3), (2 * c * c + 3 * c * b + b * b, p2)], over: 3 * c * (c + b))
+    self.point = point
   }
 }
 
-private func midpoint(_ a: CGPoint, _ b: CGPoint) -> CGPoint {
-  CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+private func distance(_ a: CGPoint, _ b: CGPoint) -> Double {
+  hypot(b.x - a.x, b.y - a.y)
+}
+
+private func combine(_ terms: [(Double, CGPoint)], over divisor: Double) -> CGPoint {
+  let sum = terms.reduce(CGPoint.zero) { CGPoint(x: $0.x + $1.0 * $1.1.x, y: $0.y + $1.0 * $1.1.y) }
+  return CGPoint(x: sum.x / divisor, y: sum.y / divisor)
+}
+
+/// `point` reflected through `center`.
+private func reflect(_ point: CGPoint, through center: CGPoint) -> CGPoint {
+  CGPoint(x: 2 * center.x - point.x, y: 2 * center.y - point.y)
 }
 
 /// The recent path of the laser, where each point stays fully visible for `fadeDelay` and then fades
@@ -56,18 +77,20 @@ public struct Trail: Sendable {
     isStrokeEnded = true
   }
 
-  /// The trail as smooth curves, oldest first. Each sampled point is the control point of a curve
-  /// between the midpoints on either side of it, so the line bends through the samples instead of
-  /// cornering at them. Each mark starts and ends at its first and last points.
+  /// The trail as smooth curves, oldest first, passing through every sample. Sparse samples from a
+  /// fast stroke still follow its shape, rather than being joined by straight lines. Missing
+  /// neighbors at the ends of a mark are mirrored from the inside, so the ends run straight on.
   public var curves: [TrailCurve] {
     strokes.filter { $0.count > 1 }.flatMap { stroke in
       let points = smoothed(Array(stroke))
-      let midpoints = zip(points, points.dropFirst()).map { midpoint($0.position, $1.position) }
-      let bends = (1..<points.count - 1).map { index in
-        TrailCurve(from: midpoints[index - 1], control: points[index].position, to: midpoints[index], point: points[index])
+      let positions = points.map(\.position)
+      return (0..<points.count - 1).map { index in
+        let p1 = positions[index]
+        let p2 = positions[index + 1]
+        let p0 = index > 0 ? positions[index - 1] : reflect(p2, through: p1)
+        let p3 = index + 2 < positions.count ? positions[index + 2] : reflect(p1, through: p2)
+        return TrailCurve(p0, p1, p2, p3, point: points[index + 1])
       }
-      return [.line(from: points.first!.position, to: midpoints.first!, point: points.first!)] + bends
-        + [.line(from: midpoints.last!, to: points.last!.position, point: points.last!)]
     }
   }
 

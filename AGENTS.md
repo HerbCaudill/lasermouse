@@ -4,3 +4,4 @@ LaserMouse is a macOS menu bar app written in Swift and AppKit, built with Swift
 - `Sources/LaserMouse` is the app: overlay windows, drawing, the status menu and settings.
 - Run `make test` rather than `swift test`; the Makefile adds the framework paths that Swift Testing needs under the Command Line Tools.
 - The app must not require Accessibility or Input Monitoring permissions, and must use only public APIs.
+- After changing the app, run `make restart` so Herb can see the change. It rebuilds, quits the running copy, installs to `/Applications` and relaunches it.

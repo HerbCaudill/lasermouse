@@ -3,7 +3,7 @@ APP := build/LaserMouse.app
 DEV_FRAMEWORKS := $(shell xcode-select -p)/Library/Developer/Frameworks
 DEV_LIBS := $(shell xcode-select -p)/Library/Developer/usr/lib
 
-.PHONY: build app install run test clean
+.PHONY: build app install restart run test clean
 
 build:
 	swift build -c release
@@ -18,6 +18,12 @@ app: build
 install: app
 	rm -rf /Applications/LaserMouse.app
 	cp -R $(APP) /Applications/
+
+restart:
+	$(MAKE) app
+	pkill -x LaserMouse || true
+	$(MAKE) install
+	open /Applications/LaserMouse.app
 
 run: app
 	open $(APP)

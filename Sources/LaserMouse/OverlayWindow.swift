@@ -1,9 +1,10 @@
 import AppKit
 
-/// A transparent, click-through window covering one screen, above everything including full-screen apps.
-final class OverlayWindow: NSWindow {
+/// A transparent window covering one screen, above everything including full-screen apps. It lets
+/// clicks through except while the trigger keys are down, and never activates the app when clicked.
+final class OverlayWindow: NSPanel {
   init(screen: NSScreen, state: LaserState) {
-    super.init(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+    super.init(contentRect: screen.frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
     setFrame(screen.frame, display: false)
     isOpaque = false
     backgroundColor = .clear

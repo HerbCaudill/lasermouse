@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private var statusMenu: StatusMenu?
   private var timer: Timer?
   private var wasActive = false
+  private var isCapturing = false
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     statusMenu = StatusMenu(settings: settings)
@@ -32,12 +33,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private func rebuildOverlays() {
     overlays.forEach { $0.close() }
     overlays = NSScreen.screens.map { OverlayWindow(screen: $0, state: state) }
+    isCapturing = false
     overlays.forEach { $0.orderFrontRegardless() }
   }
 
   private func tick() {
     let now = ProcessInfo.processInfo.systemUptime
-    let isHeld = settings.trigger.isHeld(by: NSEvent.modifierFlags, mouseDown: NSEvent.pressedMouseButtons & 1 != 0)
+    let keys = NSEvent.modifierFlags
+    let mouseDown = NSEvent.pressedMouseButtons & 1 != 0
+    let isHeld = settings.trigger.isHeld(by: keys, mouseDown: mouseDown)
     let pointer = NSEvent.mouseLocation
 
     state.now = now
@@ -47,6 +51,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     state.head = isHeld ? pointer : nil
     if isHeld { state.trail.add(pointer, at: now) }
     state.trail.prune(at: now)
+
+    // Keep the mouse until the button comes up, so the app underneath never sees half a click.
+    let capture = settings.trigger.capturesClicks(with: keys) || (isCapturing && mouseDown)
+    if capture != isCapturing {
+      overlays.forEach { $0.ignoresMouseEvents = !capture }
+      isCapturing = capture
+    }
 
     let isActive = isHeld || !state.trail.isEmpty
     if isActive || wasActive {

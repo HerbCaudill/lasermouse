@@ -41,3 +41,21 @@ import Testing
   let trigger: Trigger = [.control, .option]
   #expect(trigger.isHeld(by: [.control, .option, .capsLock, .function, .numericPad], mouseDown: false))
 }
+
+@Test func clicksAreCapturedOnceTheKeysAreDownAndBeforeTheClick() {
+  #expect(Trigger.all.capturesClicks(with: [.control, .option, .command]))
+}
+
+@Test func clicksAreNotCapturedWhileTheKeysDoNotMatch() {
+  #expect(!Trigger.all.capturesClicks(with: [.control, .option]))
+  #expect(!Trigger.all.capturesClicks(with: [.control, .option, .command, .shift]))
+}
+
+@Test func clicksAreNotCapturedWhenTheTriggerHasNoClick() {
+  let trigger: Trigger = [.control, .option]
+  #expect(!trigger.capturesClicks(with: [.control, .option]))
+}
+
+@Test func clicksAreNeverCapturedWhenTheClickIsTheWholeTrigger() {
+  #expect(!Trigger.mouseClick.capturesClicks(with: []))
+}

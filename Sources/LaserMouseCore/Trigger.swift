@@ -28,7 +28,16 @@ public struct Trigger: OptionSet, Sendable {
   /// bits) and, if it requires a click, the mouse button is pressed. An empty trigger is never held.
   public func isHeld(by pressed: NSEvent.ModifierFlags, mouseDown: Bool) -> Bool {
     guard !isEmpty else { return false }
-    let keysMatch = pressed.intersection([.control, .option, .command, .shift]) == flags
-    return keysMatch && (mouseDown || !contains(.mouseClick))
+    return keysMatch(pressed) && (mouseDown || !contains(.mouseClick))
+  }
+
+  /// Whether the overlay should take the mouse so the click that completes the trigger doesn't reach
+  /// the app underneath. A click with no keys is never captured, or the mouse would stop working.
+  public func capturesClicks(with pressed: NSEvent.ModifierFlags) -> Bool {
+    contains(.mouseClick) && !flags.isEmpty && keysMatch(pressed)
+  }
+
+  private func keysMatch(_ pressed: NSEvent.ModifierFlags) -> Bool {
+    pressed.intersection([.control, .option, .command, .shift]) == flags
   }
 }

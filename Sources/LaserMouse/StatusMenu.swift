@@ -24,7 +24,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
     menu.addItem(.sectionHeader(title: "Hold to point"))
     let triggerParts: [(String, Trigger)] = [
-      ("⌃ Control", .control), ("⌥ Option", .option), ("⌘ Command", .command), ("Mouse click", .mouseClick),
+      ("⌃ Control", .control), ("⌥ Option", .option), ("⌘ Command", .command), ("Left mouse button", .mouseClick),
     ]
     for (title, part) in triggerParts {
       menu.addItem(choiceItem(title, isOn: settings.trigger.contains(part)) { [weak self] in

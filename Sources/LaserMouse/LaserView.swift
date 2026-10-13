@@ -57,8 +57,6 @@ final class LaserView: NSView {
       let opacity = state.rectangles.opacity(of: mark, at: state.now)
       let origin = local(mark.rect.origin)
       let rect = CGRect(origin: origin, size: mark.rect.size)
-      context.setFillColor(state.color.withAlphaComponent(0.1 * opacity).cgColor)
-      context.fill(rect)
       context.setStrokeColor(state.color.withAlphaComponent(0.85 * opacity).cgColor)
       context.stroke(rect)
     }

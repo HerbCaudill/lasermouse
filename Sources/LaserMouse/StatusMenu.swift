@@ -53,9 +53,9 @@ final class StatusMenu: NSObject, NSMenuDelegate {
       ) { [weak self] in self?.settings.fadeDuration = $0 })
     menu.addItem(
       sliderItem(
-        title: "Dot size", value: settings.dotSize, range: Settings.dotSizeRange,
+        title: "Stroke", value: settings.strokeWidth, range: Settings.strokeWidthRange,
         format: { String(format: "%.0f pt", $0) }
-      ) { [weak self] in self?.settings.dotSize = $0 })
+      ) { [weak self] in self?.settings.strokeWidth = $0 })
 
     menu.addItem(.separator())
     menu.addItem(.sectionHeader(title: "Color"))

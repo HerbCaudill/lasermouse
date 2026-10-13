@@ -50,7 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     state.trail.fadeDelay = settings.fadeDelay
     state.rectangles.fade = Fade(duration: settings.fadeDuration, delay: settings.fadeDelay)
     state.color = settings.color.nsColor
-    state.dotSize = settings.dotSize
+    state.strokeWidth = settings.strokeWidth
     state.head = action == .draw ? pointer : nil
     if action == .draw { state.trail.add(pointer, at: now) } else { state.trail.endStroke() }
     if action == .rectangle { state.rectangles.drag(to: pointer) } else { state.rectangles.release(at: now) }

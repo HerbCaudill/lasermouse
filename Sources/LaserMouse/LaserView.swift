@@ -9,7 +9,7 @@ final class LaserState {
   var head: CGPoint?
   var now: TimeInterval = 0
   var color = LaserColor.red.nsColor
-  var dotSize: CGFloat = 16
+  var strokeWidth: CGFloat = 12
 }
 
 /// Draws the part of the laser that falls on one screen.
@@ -42,7 +42,7 @@ final class LaserView: NSView {
     for (from, to) in segments {
       let opacity = state.trail.opacity(of: to, at: state.now)
       context.setStrokeColor(state.color.withAlphaComponent(0.85 * opacity).cgColor)
-      context.setLineWidth(state.dotSize * (0.2 + 0.6 * opacity))
+      context.setLineWidth(state.strokeWidth)
       context.move(to: local(from.position))
       context.addLine(to: local(to.position))
       context.strokePath()
@@ -52,7 +52,7 @@ final class LaserView: NSView {
 
   private func drawRectangles(in context: CGContext, local: (CGPoint) -> CGPoint) {
     context.setLineJoin(.round)
-    context.setLineWidth(state.dotSize * 0.3)
+    context.setLineWidth(state.strokeWidth)
     for mark in state.rectangles.marks {
       let opacity = state.rectangles.opacity(of: mark, at: state.now)
       let origin = local(mark.rect.origin)
@@ -63,7 +63,7 @@ final class LaserView: NSView {
   }
 
   private func drawDot(at center: CGPoint, in context: CGContext) {
-    let size = state.dotSize
+    let size = state.strokeWidth
     fillCircle(at: center, radius: size, color: state.color.withAlphaComponent(0.2), in: context)
     fillCircle(at: center, radius: size / 2, color: state.color, in: context)
     fillCircle(at: center, radius: size / 5, color: NSColor.white.withAlphaComponent(0.75), in: context)

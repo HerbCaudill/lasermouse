@@ -22,7 +22,7 @@ enum LaserColor: String, CaseIterable {
 final class Settings {
   static let fadeDelayRange: ClosedRange<Double> = 0...5
   static let fadeRange: ClosedRange<Double> = 0.2...5
-  static let dotSizeRange: ClosedRange<Double> = 8...40
+  static let strokeWidthRange: ClosedRange<Double> = 4...40
 
   private let defaults = UserDefaults.standard
 
@@ -36,9 +36,9 @@ final class Settings {
     set { defaults.set(newValue, forKey: "fadeDelay") }
   }
 
-  var dotSize: CGFloat {
-    get { defaults.object(forKey: "dotSize") as? Double ?? 16 }
-    set { defaults.set(Double(newValue), forKey: "dotSize") }
+  var strokeWidth: CGFloat {
+    get { defaults.object(forKey: "strokeWidth") as? Double ?? 12 }
+    set { defaults.set(Double(newValue), forKey: "strokeWidth") }
   }
 
   static let defaultTriggers: [Action: Trigger] = [

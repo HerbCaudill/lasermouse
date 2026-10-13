@@ -35,6 +35,11 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     menu.addItem(.separator())
     menu.addItem(
       sliderItem(
+        title: "Fade delay", value: settings.fadeDelay, range: Settings.fadeDelayRange,
+        format: { String(format: "%.1f s", $0) }
+      ) { [weak self] in self?.settings.fadeDelay = $0 })
+    menu.addItem(
+      sliderItem(
         title: "Fade time", value: settings.fadeDuration, range: Settings.fadeRange,
         format: { String(format: "%.1f s", $0) }
       ) { [weak self] in self?.settings.fadeDuration = $0 })

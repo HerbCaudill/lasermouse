@@ -20,6 +20,7 @@ enum LaserColor: String, CaseIterable {
 /// User preferences, persisted in UserDefaults.
 @MainActor
 final class Settings {
+  static let fadeDelayRange: ClosedRange<Double> = 0...5
   static let fadeRange: ClosedRange<Double> = 0.2...5
   static let dotSizeRange: ClosedRange<Double> = 8...40
 
@@ -28,6 +29,11 @@ final class Settings {
   var fadeDuration: TimeInterval {
     get { defaults.object(forKey: "fadeDuration") as? Double ?? 3 }
     set { defaults.set(newValue, forKey: "fadeDuration") }
+  }
+
+  var fadeDelay: TimeInterval {
+    get { defaults.object(forKey: "fadeDelay") as? Double ?? 0 }
+    set { defaults.set(newValue, forKey: "fadeDelay") }
   }
 
   var dotSize: CGFloat {

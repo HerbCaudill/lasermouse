@@ -45,3 +45,20 @@ import Testing
     [CGPoint(x: 3, y: 3), CGPoint(x: 4, y: 4)],
   ])
 }
+
+@Test func pointStaysOpaqueThroughTheDelayThenFades() {
+  var trail = Trail(fadeDuration: 2, fadeDelay: 1)
+  trail.add(.zero, at: 0)
+  #expect(trail.opacity(of: trail.points[0], at: 1) == 1)
+  #expect(trail.opacity(of: trail.points[0], at: 2) == 0.5)
+  #expect(trail.opacity(of: trail.points[0], at: 3) == 0)
+}
+
+@Test func pruneKeepsPointsThatAreStillInTheirDelay() {
+  var trail = Trail(fadeDuration: 1, fadeDelay: 2)
+  trail.add(.zero, at: 0)
+  trail.prune(at: 2.5)
+  #expect(trail.points.count == 1)
+  trail.prune(at: 3)
+  #expect(trail.isEmpty)
+}

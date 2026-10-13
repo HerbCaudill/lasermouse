@@ -46,6 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     state.now = now
     state.trail.fadeDuration = settings.fadeDuration
+    state.trail.fadeDelay = settings.fadeDelay
     state.color = settings.color.nsColor
     state.dotSize = settings.dotSize
     state.head = isHeld ? pointer : nil
